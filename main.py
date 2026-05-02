@@ -4,6 +4,8 @@ import sys
 import game
 from typing import cast
 
+DEBUG = False
+
 
 class Board:
     WHITE_PAWN: int
@@ -22,19 +24,17 @@ class Board:
     def __init__(self) -> None: ...
     def printBoard(self) -> None: ...
     def storeBoard(self) -> None: ...
+    def possibleMoves(self, PieceCode: int, row: int, column: int) -> None: ...
 
 
 BOARD = cast(Board, game.Board())
-Board_Vector = np.array(BOARD.storeBoard())
+BOARD.printBoard()
 
 pygame.init()
 
 IMAGES = {}
 
 SCREENWIDTH, SCREENHEIGHT = 800, 800
-
-WHITE = (240, 217, 181)
-BROWN = (181, 136, 99)
 
 ROWS, COLS = 8, 8
 
@@ -48,12 +48,21 @@ Running = True
 
 
 def drawCanvas():
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+    hover_col = mouse_x // GRIDWIDTH
+    hover_row = mouse_y // GRIDWIDTH
+
     for row in range(ROWS):
         for col in range(COLS):
             if (row + col) % 2 == 0:
-                color = WHITE
+                color = (240, 217, 181)
+                hover_color = (247, 228, 201)
             else:
-                color = BROWN
+                color = (181, 136, 99)
+                hover_color = (199, 154, 109)
+            if row == hover_row and col == hover_col:
+                color = hover_color
 
             pygame.draw.rect(
                 WINDOW,
@@ -80,8 +89,8 @@ def LoadImages(IMAGES):
         IMAGES[ITEM] = pygame.image.load(f"./assets/images/{ITEM.lower()}.png")
 
 
-def blitImages(boardVector: np.ndarray):
-    boardVector = np.flipud(boardVector)
+def blitImages(BOARD: Board):
+    boardVector = np.array(BOARD.storeBoard())
     image = None
     x = None
     y = None
@@ -173,14 +182,43 @@ def blitImages(boardVector: np.ndarray):
                 WINDOW.blit(image, (x, y))
 
 
+def drawPossibleMoves(BOARD: Board):
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+    hover_col = mouse_x // GRIDWIDTH
+    hover_row = mouse_y // GRIDWIDTH
+
+    boardVector = np.array(BOARD.storeBoard())
+    indices = np.where(
+        BOARD.possibleMoves(boardVector[hover_row][hover_col], hover_row, hover_col)
+    )
+    if DEBUG:
+        for row in BOARD.possibleMoves(
+            boardVector[hover_row][hover_col], hover_row, hover_col
+        ):
+            print(row)
+        print("\n")
+    for r, c in zip(indices[0], indices[1]):
+        pygame.draw.circle(
+            surface=WINDOW,
+            color=(0, 255, 0),
+            center=((c + 0.5) * GRIDWIDTH, (r + 0.5) * GRIDWIDTH),
+            radius=10,
+        )
+
+
 LoadImages(IMAGES=IMAGES)
 
 while Running:
     drawCanvas()
-    blitImages(Board_Vector)
+    blitImages(BOARD)
+    drawPossibleMoves(BOARD)
     pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-    CLOCK.tick(60)
+    if DEBUG:
+        CLOCK.tick(1)
+    else:
+        CLOCK.tick(60)

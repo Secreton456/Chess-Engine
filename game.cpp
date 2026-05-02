@@ -25,7 +25,7 @@ struct Board
     // clang-format on
     void printBoard()
     {
-        for (int row = 7; row >= 0; row--)
+        for (int row = 0; row <= 7; row++)
         {
             std::cout << row + 1 << "  ";
 
@@ -72,12 +72,12 @@ struct Board
     std::vector<std::vector<int>> storeBoard()
     {
         std::vector<std::vector<int>> board(8, std::vector<int>(8));
-        for (int row = 7; row >= 0; row--)
+        for (int row = 0; row <= 7; row++)
         {
             for (int column = 0; column <= 7; column++)
             {
                 int cell = 8 * row + column;
-                U64 mask = 1LL << cell;
+                U64 mask = 1ULL << cell;
                 board[row][column] = 0;
                 if (WHITE_PAWN & mask)
                     board[row][column] = 1;
@@ -107,6 +107,58 @@ struct Board
         }
         return board;
     }
+    std::vector<std::vector<int>> possibleMoves(int PieceCode, int row, int col)
+    {
+        std::vector<std::vector<int>> resultingBoard(8, std::vector<int>(8, 0));
+        if (PieceCode == 2 || PieceCode == -2)
+        {
+            std::vector<std::pair<int, int>> possibleMoves = {{2, 1}, {1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, 2}, {-2, -1}, {-1, -2}};
+            for (auto move : possibleMoves)
+            {
+                if (row + move.first <= 7 && row + move.first >= 0 && col + move.second <= 7 && col + move.second >= 0)
+                {
+                    resultingBoard[row + move.first][col + move.second] = 1;
+                }
+            }
+        }
+        else if (PieceCode == 6 || PieceCode == -6)
+        {
+            std::vector<std::pair<int, int>> possibleMoves = {{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+            for (auto move : possibleMoves)
+            {
+                if (row + move.first <= 7 && row + move.first >= 0 && col + move.second <= 7 && col + move.second >= 0)
+                {
+                    resultingBoard[row + move.first][col + move.second] = 1;
+                }
+            }
+        }
+        U64 OCCUPIED_CELLS = (PieceCode > 0) ? this->getWhiteCells() : this->getBlackCells();
+        for (int row = 0; row <= 7; row++)
+        {
+            for (int col = 0; col <= 7; col++)
+            {
+                if (resultingBoard[row][col])
+                {
+                    int cell = row * 8 + col;
+                    U64 mask = 1ULL << cell;
+                    if (mask & OCCUPIED_CELLS)
+                        resultingBoard[row][col] = 0;
+                }
+            }
+        }
+
+        return resultingBoard;
+    }
+    U64 getWhiteCells()
+    {
+        U64 WHITE_CELLS = this->WHITE_BISHOP | this->WHITE_KING | this->WHITE_KNIGHT | this->WHITE_PAWN | this->WHITE_QUEEN | this->WHITE_ROOK;
+        return WHITE_CELLS;
+    }
+    U64 getBlackCells()
+    {
+        U64 BLACK_CELLS = this->BLACK_BISHOP | this->BLACK_KING | this->BLACK_KNIGHT | this->BLACK_PAWN | this->BLACK_QUEEN | this->BLACK_ROOK;
+        return BLACK_CELLS;
+    }
 };
 
 PYBIND11_MODULE(game, m)
@@ -116,6 +168,9 @@ PYBIND11_MODULE(game, m)
         .def(py::init<>())
         .def("printBoard", &Board::printBoard)
         .def("storeBoard", &Board::storeBoard)
+        .def("possibleMoves", &Board::possibleMoves)
+        .def("getWhiteCells", &Board::getWhiteCells)
+        .def("getBlackCells", &Board::getBlackCells)
         .def_readwrite("WHITE_PAWN", &Board::WHITE_PAWN)
         .def_readwrite("BLACK_PAWN", &Board::BLACK_PAWN)
         .def_readwrite("WHITE_ROOK", &Board::WHITE_ROOK)
