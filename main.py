@@ -1,7 +1,7 @@
 import pygame, pybind11
 import numpy as np
 import sys
-import game
+import board
 from typing import cast
 
 DEBUG = False
@@ -27,13 +27,26 @@ class Board:
     def possibleMoves(self, PieceCode: int, row: int, column: int) -> None: ...
 
 
-BOARD = cast(Board, game.Board())
+BOARD = cast(Board, board.Board())
 BOARD.printBoard()
 
 pygame.init()
 
 IMAGES = {}
-
+PIECECODE = {
+    1: "WHITE_PAWN",
+    2: "WHITE_KNIGHT",
+    3: "WHITE_BISHOP",
+    4: "WHITE_ROOK",
+    5: "WHITE_QUEEN",
+    6: "WHITE_KING",
+    -1: "BLACK_PAWN",
+    -2: "BLACK_KNIGHT",
+    -3: "BLACK_BISHOP",
+    -4: "BLACK_ROOK",
+    -5: "BLACK_QUEEN",
+    -6: "BLACK_KING",
+}
 SCREENWIDTH, SCREENHEIGHT = 800, 800
 
 ROWS, COLS = 8, 8
@@ -94,92 +107,18 @@ def blitImages(BOARD: Board):
     image = None
     x = None
     y = None
+
+    def blitImageOnCell(PieceCode, row, column):
+        image = IMAGES[PIECECODE[PieceCode]]
+        x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
+        y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
+
+        WINDOW.blit(image, (x, y))
+
     for row in range(8):
         for column in range(8):
-            if boardVector[row][column] == 1:
-                image = IMAGES["WHITE_PAWN"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -1:
-                image = IMAGES["BLACK_PAWN"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == 2:
-                image = IMAGES["WHITE_KNIGHT"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -2:
-                image = IMAGES["BLACK_KNIGHT"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == 3:
-                image = IMAGES["WHITE_BISHOP"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -3:
-                image = IMAGES["BLACK_BISHOP"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == 4:
-                image = IMAGES["WHITE_ROOK"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -4:
-                image = IMAGES["BLACK_ROOK"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == 5:
-                image = IMAGES["WHITE_QUEEN"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -5:
-                image = IMAGES["BLACK_QUEEN"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == 6:
-                image = IMAGES["WHITE_KING"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
-            elif boardVector[row][column] == -6:
-                image = IMAGES["BLACK_KING"]
-
-                x = column * GRIDWIDTH + (GRIDWIDTH - image.get_width()) // 2
-                y = row * GRIDWIDTH + (GRIDWIDTH - image.get_height()) // 2
-
-                WINDOW.blit(image, (x, y))
+            if boardVector[row][column] != 0:
+                blitImageOnCell(boardVector[row][column], row, column)
 
 
 def drawPossibleMoves(BOARD: Board):
