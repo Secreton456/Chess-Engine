@@ -183,6 +183,76 @@ struct Board
         {
             possibleMoves = {{2, 1}, {1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, 2}, {-2, -1}, {-1, -2}};
         }
+        // Update possibleMoves for a bishop.
+        else if (PieceCode == 3 || PieceCode == -3)
+        {
+            int cell = 8 * row + col;
+            U64 mask = 1ULL << cell;
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << (7 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({i, -i});
+                    break;
+                }
+                else if ((mask << (7 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({i, -i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << (9 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({i, i});
+                    break;
+                }
+                else if ((mask << (9 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({i, i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> (9 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({-i, -i});
+                    break;
+                }
+                else if ((mask >> (9 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({-i, -i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> (7 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({-i, i});
+                    break;
+                }
+                else if ((mask >> (7 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({-i, i});
+                }
+            }
+        }
         // Update possibleMoves for a rook.
         else if (PieceCode == 4 || PieceCode == -4)
         {
@@ -252,6 +322,142 @@ struct Board
                 else
                 {
                     possibleMoves.push_back({0, -i});
+                }
+            }
+        }
+        // Update possibleMoves for a Queen.
+        else if (PieceCode == 5 || PieceCode == -5)
+        {
+            int cell = 8 * row + col;
+            U64 mask = 1ULL << cell;
+            // Along Vertical direction
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << (8 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({i, 0});
+                    break;
+                }
+                else if ((mask << (8 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({i, 0});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> (8 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({-i, 0});
+                    break;
+                }
+                else if ((mask >> (8 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({-i, 0});
+                }
+            }
+            // Along horizontal direction
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << i) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({0, i});
+                    break;
+                }
+                else if ((mask << (8 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({0, i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> i) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({0, -i});
+                    break;
+                }
+                else if ((mask >> i) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({0, -i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << (7 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({i, -i});
+                    break;
+                }
+                else if ((mask << (7 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({i, -i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask << (9 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({i, i});
+                    break;
+                }
+                else if ((mask << (9 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({i, i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> (9 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({-i, -i});
+                    break;
+                }
+                else if ((mask >> (9 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({-i, -i});
+                }
+            }
+            for (int i = 1; i <= 7; i++)
+            {
+                if ((mask >> (7 * i)) & ENEMY_CELLS)
+                {
+                    possibleMoves.push_back({-i, i});
+                    break;
+                }
+                else if ((mask >> (7 * i)) & SELF_CELLS)
+                {
+                    break;
+                }
+                else
+                {
+                    possibleMoves.push_back({-i, i});
                 }
             }
         }
