@@ -25,6 +25,9 @@ class Board:
     def printBoard(self) -> None: ...
     def storeBoard(self) -> None: ...
     def possibleMoves(self, PieceCode: int, row: int, column: int) -> None: ...
+    def updateBoard(
+        self, PieceCode: int, init_row: int, init_col: int, end_row: int, end_col: int
+    ) -> None: ...
 
 
 BOARD = cast(Board, board.Board())
@@ -188,7 +191,7 @@ def markMoves(markedCell, BOARD: Board):
     )
 
     moves = [(int(r), int(c)) for r, c in zip(rows, cols)]
-    if True:
+    if DEBUG:
         print(f"Marked Moves: {moves}")
     return moves
 
@@ -203,6 +206,16 @@ def drawMarkedMoves(markedMoves: list):
         )
 
 
+def chooseMove(BOARD: Board, markedCell: tuple, markedMoves: list):
+    boardVector = BOARD.storeBoard()
+
+    piece = boardVector[markedCell[0]][markedCell[1]]
+    BOARD.updateBoard(piece, markedCell[0], markedCell[1], hover_row, hover_col)
+    BOARD.printBoard()
+    markedCell = None
+    return markedCell
+
+
 LoadImages(IMAGES=IMAGES)
 
 while Running:
@@ -215,7 +228,17 @@ while Running:
             pygame.quit()
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
-            markedCell = markCell(markedCell)
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            hover_row = mouse_y // GRIDWIDTH
+            hover_col = mouse_x // GRIDWIDTH
+
+            if markedCell is not None and (hover_row, hover_col) in markedMoves:
+                markedCell = chooseMove(BOARD, markedCell, markedMoves)
+                markedMoves = None
+            else:
+                markedCell = markCell(None)
+                if markedCell:
+                    markedMoves = markMoves(markedCell, BOARD)
     if markedCell is not None:
         drawMarkedCell(markedCell)
         markedMoves = markMoves(markedCell, BOARD)

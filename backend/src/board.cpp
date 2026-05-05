@@ -22,9 +22,23 @@ struct Board
     U64 WHITE_BISHOP = 0b00100100ULL;
     U64 BLACK_BISHOP = 0b00100100ULL << 56;
     U64 WHITE_QUEEN  = 0b00001000ULL;
-    U64 BLACK_QUEEN  = 0b00001000ULL << 56;
+    U64 BLACK_QUEEN  = 0b00010000ULL << 56;
     U64 WHITE_KING   = 0b00010000ULL;
-    U64 BLACK_KING   = 0b00010000ULL << 56;
+    U64 BLACK_KING   = 0b00001000ULL << 56;
+    std::map<int,U64> PieceCodeMap = {
+        {1,WHITE_PAWN},
+        {-1,BLACK_PAWN},
+        {4,WHITE_ROOK},
+        {-4,BLACK_ROOK},
+        {2,WHITE_KNIGHT},
+        {-2,BLACK_KNIGHT},
+        {3,WHITE_BISHOP},
+        {-3,BLACK_BISHOP},
+        {5,WHITE_QUEEN},
+        {-5,BLACK_QUEEN},
+        {6,WHITE_KING},
+        {-6,BLACK_KING},
+    };
     // clang-format on
     void printBoard()
     {
@@ -501,6 +515,26 @@ struct Board
         U64 BLACK_CELLS = this->BLACK_BISHOP | this->BLACK_KING | this->BLACK_KNIGHT | this->BLACK_PAWN | this->BLACK_QUEEN | this->BLACK_ROOK;
         return BLACK_CELLS;
     }
+    void updateBoard(int Piececode, int init_row, int init_col, int end_row, int end_col)
+    {
+        U64 init_mask = 1ULL << (8 * init_row + init_col);
+        U64 end_mask = 1ULL << (8 * end_row + end_col);
+        for (auto &piece : this->PieceCodeMap)
+            piece.second = (piece.second & (~init_mask));
+        this->PieceCodeMap[Piececode] = ((this->PieceCodeMap[Piececode] & (~init_mask)) | end_mask);
+        this->WHITE_PAWN = PieceCodeMap[1];
+        this->BLACK_PAWN = PieceCodeMap[-1];
+        this->WHITE_KNIGHT = PieceCodeMap[2];
+        this->BLACK_KNIGHT = PieceCodeMap[-2];
+        this->WHITE_BISHOP = PieceCodeMap[3];
+        this->BLACK_BISHOP = PieceCodeMap[-3];
+        this->WHITE_ROOK = PieceCodeMap[4];
+        this->BLACK_ROOK = PieceCodeMap[-4];
+        this->WHITE_QUEEN = PieceCodeMap[5];
+        this->BLACK_QUEEN = PieceCodeMap[-5];
+        this->WHITE_KING = PieceCodeMap[6];
+        this->BLACK_KING = PieceCodeMap[-6];
+    }
 };
 
 PYBIND11_MODULE(board, m)
@@ -513,6 +547,7 @@ PYBIND11_MODULE(board, m)
         .def("possibleMoves", &Board::possibleMoves)
         .def("getWhiteCells", &Board::getWhiteCells)
         .def("getBlackCells", &Board::getBlackCells)
+        .def("updateBoard", &Board::updateBoard)
         .def_readwrite("WHITE_PAWN", &Board::WHITE_PAWN)
         .def_readwrite("BLACK_PAWN", &Board::BLACK_PAWN)
         .def_readwrite("WHITE_ROOK", &Board::WHITE_ROOK)
