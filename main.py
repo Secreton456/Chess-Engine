@@ -58,6 +58,8 @@ CLOCK = pygame.time.Clock()
 
 pygame.display.set_caption("Best Chess")
 Running = True
+markedCell = None
+markedMoves = None
 
 
 def drawCanvas():
@@ -132,6 +134,7 @@ def drawPossibleMoves(BOARD: Board):
         BOARD.possibleMoves(boardVector[hover_row][hover_col], hover_row, hover_col)
     )
     if DEBUG:
+        print(f"Current Board State")
         for row in BOARD.possibleMoves(
             boardVector[hover_row][hover_col], hover_row, hover_col
         ):
@@ -146,18 +149,80 @@ def drawPossibleMoves(BOARD: Board):
         )
 
 
+def markCell(markedCell):
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    hover_col = mouse_x // GRIDWIDTH
+    hover_row = mouse_y // GRIDWIDTH
+
+    if markedCell == (hover_row, hover_col):
+        return None
+    markedCell = hover_row, hover_col
+    if DEBUG:
+        print(f"markedCell:{markedCell}")
+    return markedCell
+
+
+def drawMarkedCell(markedCell):
+    pygame.draw.rect(
+        WINDOW,
+        color="red",
+        rect=(
+            markedCell[1] * GRIDWIDTH,
+            markedCell[0] * GRIDWIDTH,
+            GRIDWIDTH,
+            GRIDWIDTH,
+        ),
+        width=3,
+    )
+
+
+def markMoves(markedCell, BOARD: Board):
+    if markedCell is not None:
+        boardVector = np.array(BOARD.storeBoard())
+    else:
+        return None
+    rows, cols = np.where(
+        BOARD.possibleMoves(
+            boardVector[markedCell[0]][markedCell[1]], markedCell[0], markedCell[1]
+        )
+    )
+
+    moves = [(int(r), int(c)) for r, c in zip(rows, cols)]
+    if True:
+        print(f"Marked Moves: {moves}")
+    return moves
+
+
+def drawMarkedMoves(markedMoves: list):
+    for cell in markedMoves:
+        pygame.draw.circle(
+            surface=WINDOW,
+            color=(0, 0, 150),
+            center=((cell[1] + 0.5) * GRIDWIDTH, (cell[0] + 0.5) * GRIDWIDTH),
+            radius=10,
+        )
+
+
 LoadImages(IMAGES=IMAGES)
 
 while Running:
     drawCanvas()
     blitImages(BOARD)
     drawPossibleMoves(BOARD)
-    pygame.display.flip()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            markedCell = markCell(markedCell)
+    if markedCell is not None:
+        drawMarkedCell(markedCell)
+        markedMoves = markMoves(markedCell, BOARD)
+        drawMarkedMoves(markedMoves=markedMoves)
+    pygame.display.update()
     if DEBUG:
+        print(f"Marked Moves:{markedMoves}")
         CLOCK.tick(1)
     else:
         CLOCK.tick(60)
