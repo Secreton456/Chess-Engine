@@ -135,7 +135,7 @@ struct Board
         }
         return board;
     }
-    std::vector<std::vector<int>> possibleMoves(int PieceCode, int row, int col)
+    std::vector<std::vector<int>> possibleMoves(int PieceCode, int row, int col, std::map<int, U64> PieceCodeMap)
     {
         /**
          * @returns An 8×8 boolean vector(resultingBoard) where each cell is true
@@ -149,8 +149,8 @@ struct Board
         std::vector<std::pair<int, int>> possibleMoves = {};
 
         // Stores the Cells of it's colour and enemy's colour in a 64 bit integer respectively.
-        U64 SELF_CELLS = (PieceCode > 0) ? this->getWhiteCells() : this->getBlackCells();
-        U64 ENEMY_CELLS = (PieceCode > 0) ? this->getBlackCells() : this->getWhiteCells();
+        U64 SELF_CELLS = (PieceCode > 0) ? this->getWhiteCells(PieceCodeMap) : this->getBlackCells(PieceCodeMap);
+        U64 ENEMY_CELLS = (PieceCode > 0) ? this->getBlackCells(PieceCodeMap) : this->getWhiteCells(PieceCodeMap);
         // Update possibleMoves for a Pawn
         if (PieceCode == 1 || PieceCode == -1)
         {
@@ -505,35 +505,87 @@ struct Board
 
         return resultingBoard;
     }
-    U64 getWhiteCells()
+    U64 getWhiteCells(std::map<int, U64> PieceCodeMap)
     {
-        U64 WHITE_CELLS = this->WHITE_BISHOP | this->WHITE_KING | this->WHITE_KNIGHT | this->WHITE_PAWN | this->WHITE_QUEEN | this->WHITE_ROOK;
+        U64 WHITE_CELLS = 0;
+        for (int i = 1; i <= 6; i++)
+            WHITE_CELLS |= PieceCodeMap[i];
         return WHITE_CELLS;
     }
-    U64 getBlackCells()
+    U64 getBlackCells(std::map<int, U64> PieceCodeMap)
     {
-        U64 BLACK_CELLS = this->BLACK_BISHOP | this->BLACK_KING | this->BLACK_KNIGHT | this->BLACK_PAWN | this->BLACK_QUEEN | this->BLACK_ROOK;
+        U64 BLACK_CELLS = 0;
+        for (int i = 1; i <= 6; i++)
+            BLACK_CELLS |= PieceCodeMap[-i];
         return BLACK_CELLS;
     }
-    void updateBoard(int Piececode, int init_row, int init_col, int end_row, int end_col)
+    bool updateBoard(int Piececode, int init_row, int init_col, int end_row, int end_col)
     {
         U64 init_mask = 1ULL << (8 * init_row + init_col);
         U64 end_mask = 1ULL << (8 * end_row + end_col);
-        for (auto &piece : this->PieceCodeMap)
+        bool valid = this->validateMove(Piececode, init_row, init_col, end_row, end_col);
+        if (valid)
+        {
+            for (auto &piece : this->PieceCodeMap)
+            {
+                piece.second = (piece.second & (~init_mask));
+                piece.second = (piece.second & (~end_mask));
+            }
+            this->PieceCodeMap[Piececode] = (this->PieceCodeMap[Piececode] | end_mask);
+            this->WHITE_PAWN = PieceCodeMap[1];
+            this->BLACK_PAWN = PieceCodeMap[-1];
+            this->WHITE_KNIGHT = PieceCodeMap[2];
+            this->BLACK_KNIGHT = PieceCodeMap[-2];
+            this->WHITE_BISHOP = PieceCodeMap[3];
+            this->BLACK_BISHOP = PieceCodeMap[-3];
+            this->WHITE_ROOK = PieceCodeMap[4];
+            this->BLACK_ROOK = PieceCodeMap[-4];
+            this->WHITE_QUEEN = PieceCodeMap[5];
+            this->BLACK_QUEEN = PieceCodeMap[-5];
+            this->WHITE_KING = PieceCodeMap[6];
+            this->BLACK_KING = PieceCodeMap[-6];
+        }
+        return valid;
+    }
+    bool inCheckCondition(int TURN, std::map<int, U64> PieceCodeMap)
+    {
+        int transform = (3 - 2 * TURN);
+        int kingCell = __builtin_ctzll(PieceCodeMap[transform * 6]);
+        int kingrow = kingCell / 8;
+        int kingcol = kingCell % 8;
+        for (auto const &[piece, bitboard] : PieceCodeMap)
+        {
+            U64 bitboardcopy = bitboard;
+            if (transform * piece < 0)
+            {
+                while (bitboardcopy)
+                {
+                    int piececell = __builtin_ctzll(bitboardcopy);
+                    int piecerow = piececell / 8;
+                    int piececol = piececell % 8;
+                    if (possibleMoves(piece, piecerow, piececol, PieceCodeMap)[kingrow][kingcol])
+                        return true;
+                    bitboardcopy &= (bitboardcopy - 1);
+                }
+            }
+        }
+        return false;
+    }
+    bool validateMove(int Piececode, int init_row, int init_col, int end_row, int end_col)
+    {
+        std::map<int, U64> tmpPieceCodeMap = this->PieceCodeMap;
+        int TURN = (Piececode > 0) ? 1 : 2;
+        U64 init_mask = 1ULL << (8 * init_row + init_col);
+        U64 end_mask = 1ULL << (8 * end_row + end_col);
+        for (auto &piece : tmpPieceCodeMap)
+        {
             piece.second = (piece.second & (~init_mask));
-        this->PieceCodeMap[Piececode] = ((this->PieceCodeMap[Piececode] & (~init_mask)) | end_mask);
-        this->WHITE_PAWN = PieceCodeMap[1];
-        this->BLACK_PAWN = PieceCodeMap[-1];
-        this->WHITE_KNIGHT = PieceCodeMap[2];
-        this->BLACK_KNIGHT = PieceCodeMap[-2];
-        this->WHITE_BISHOP = PieceCodeMap[3];
-        this->BLACK_BISHOP = PieceCodeMap[-3];
-        this->WHITE_ROOK = PieceCodeMap[4];
-        this->BLACK_ROOK = PieceCodeMap[-4];
-        this->WHITE_QUEEN = PieceCodeMap[5];
-        this->BLACK_QUEEN = PieceCodeMap[-5];
-        this->WHITE_KING = PieceCodeMap[6];
-        this->BLACK_KING = PieceCodeMap[-6];
+            piece.second = (piece.second & (~end_mask));
+        }
+        tmpPieceCodeMap[Piececode] = (tmpPieceCodeMap[Piececode] | end_mask);
+        if (inCheckCondition(TURN, tmpPieceCodeMap))
+            return false;
+        return true;
     }
 };
 
@@ -548,6 +600,8 @@ PYBIND11_MODULE(board, m)
         .def("getWhiteCells", &Board::getWhiteCells)
         .def("getBlackCells", &Board::getBlackCells)
         .def("updateBoard", &Board::updateBoard)
+        .def("inCheckCondition", &Board::inCheckCondition)
+        .def("validateMove", &Board::validateMove)
         .def_readwrite("WHITE_PAWN", &Board::WHITE_PAWN)
         .def_readwrite("BLACK_PAWN", &Board::BLACK_PAWN)
         .def_readwrite("WHITE_ROOK", &Board::WHITE_ROOK)
@@ -559,5 +613,6 @@ PYBIND11_MODULE(board, m)
         .def_readwrite("WHITE_KNIGHT", &Board::WHITE_KNIGHT)
         .def_readwrite("BLACK_KNIGHT", &Board::BLACK_KNIGHT)
         .def_readwrite("WHITE_KING", &Board::WHITE_KING)
-        .def_readwrite("BLACK_KING", &Board::BLACK_KING);
+        .def_readwrite("BLACK_KING", &Board::BLACK_KING)
+        .def_readonly("PieceCodeMap", &Board::PieceCodeMap);
 }

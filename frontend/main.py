@@ -20,12 +20,19 @@ class Board:
     BLACK_QUEEN: int
     WHITE_KING: int
     BLACK_KING: int
+    PieceCodeMap: dict
 
     def __init__(self) -> None: ...
     def printBoard(self) -> None: ...
     def storeBoard(self) -> None: ...
-    def possibleMoves(self, PieceCode: int, row: int, column: int) -> None: ...
+    def possibleMoves(
+        self, PieceCode: int, row: int, column: int, PieceCodeMap: dict
+    ) -> None: ...
     def updateBoard(
+        self, PieceCode: int, init_row: int, init_col: int, end_row: int, end_col: int
+    ) -> None: ...
+    def inCheckCondition(self, TURN: int, PieceCodeMap: dict) -> None: ...
+    def validateMove(
         self, PieceCode: int, init_row: int, init_col: int, end_row: int, end_col: int
     ) -> None: ...
 
@@ -168,7 +175,10 @@ def markMoves(markedCell, BOARD: Board):
         return None
     rows, cols = np.where(
         BOARD.possibleMoves(
-            boardVector[markedCell[0]][markedCell[1]], markedCell[0], markedCell[1]
+            boardVector[markedCell[0]][markedCell[1]],
+            markedCell[0],
+            markedCell[1],
+            BOARD.PieceCodeMap,
         )
     )
 
@@ -194,8 +204,9 @@ def chooseMove(BOARD: Board, markedCell: tuple, markedMoves: list, TURN: int):
     piece = boardVector[markedCell[0]][markedCell[1]]
     BOARD.updateBoard(piece, markedCell[0], markedCell[1], hover_row, hover_col)
     BOARD.printBoard()
+    if BOARD.updateBoard(piece, markedCell[0], markedCell[1], hover_row, hover_col):
+        TURN = 1 if TURN == 2 else 2
     markedCell = None
-    TURN = 1 if TURN == 2 else 2
     return markedCell, TURN
 
 
