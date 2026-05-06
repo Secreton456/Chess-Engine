@@ -3,29 +3,30 @@
 #include <cstdint>
 #include <bitset>
 #include <bits/stdc++.h>
+#include <../include/board.hpp>
 typedef uint64_t U64;
 
 namespace py = pybind11;
 
-struct Board
+Board::Board()
 {
     /**
      * Initialise the Board to the default chess board using a 64 bit integer.
      */
     // clang-format off
-    U64 WHITE_PAWN   = 0b11111111ULL << 8;
-    U64 BLACK_PAWN   = 0b11111111ULL << 48;
-    U64 WHITE_ROOK   = 0b10000001ULL;
-    U64 BLACK_ROOK   = 0b10000001ULL << 56;
-    U64 WHITE_KNIGHT = 0b01000010ULL;
-    U64 BLACK_KNIGHT = 0b01000010ULL << 56;
-    U64 WHITE_BISHOP = 0b00100100ULL;
-    U64 BLACK_BISHOP = 0b00100100ULL << 56;
-    U64 WHITE_QUEEN  = 0b00001000ULL;
-    U64 BLACK_QUEEN  = 0b00010000ULL << 56;
-    U64 WHITE_KING   = 0b00010000ULL;
-    U64 BLACK_KING   = 0b00001000ULL << 56;
-    std::map<int,U64> PieceCodeMap = {
+    WHITE_PAWN   = 0b11111111ULL << 8;
+    BLACK_PAWN   = 0b11111111ULL << 48;
+    WHITE_ROOK   = 0b10000001ULL;
+    BLACK_ROOK   = 0b10000001ULL << 56;
+    WHITE_KNIGHT = 0b01000010ULL;
+    BLACK_KNIGHT = 0b01000010ULL << 56;
+    WHITE_BISHOP = 0b00100100ULL;
+    BLACK_BISHOP = 0b00100100ULL << 56;
+    WHITE_QUEEN  = 0b00001000ULL;
+    BLACK_QUEEN  = 0b00010000ULL << 56;
+    WHITE_KING   = 0b00010000ULL;
+    BLACK_KING   = 0b00001000ULL << 56;
+    PieceCodeMap = {
         {1,WHITE_PAWN},
         {-1,BLACK_PAWN},
         {4,WHITE_ROOK},
@@ -39,555 +40,555 @@ struct Board
         {6,WHITE_KING},
         {-6,BLACK_KING},
     };
-    // clang-format on
-    void printBoard()
+}
+// clang-format on
+void Board::printBoard()
+{
+    /**
+     * Prints the board on terminal with row 0 at top and column 0 at the left.
+     * White pieces are initialised at the top.
+     * The position of a specific piece in a 64 bit integer format is given by:
+     *          1ULL << ( 8*row + column )
+     */
+    for (int row = 0; row <= 7; row++)
     {
-        /**
-         * Prints the board on terminal with row 0 at top and column 0 at the left.
-         * White pieces are initialised at the top.
-         * The position of a specific piece in a 64 bit integer format is given by:
-         *          1ULL << ( 8*row + column )
-         */
-        for (int row = 0; row <= 7; row++)
+        std::cout << row + 1 << "  ";
+
+        for (int column = 0; column < 8; column++)
         {
-            std::cout << row + 1 << "  ";
+            int cell = row * 8 + column;
+            U64 mask = 1ULL << cell;
 
-            for (int column = 0; column < 8; column++)
-            {
-                int cell = row * 8 + column;
-                U64 mask = 1ULL << cell;
+            char piece = '.';
 
-                char piece = '.';
+            if (WHITE_PAWN & mask)
+                piece = 'P';
+            else if (BLACK_PAWN & mask)
+                piece = 'p';
+            else if (WHITE_ROOK & mask)
+                piece = 'R';
+            else if (BLACK_ROOK & mask)
+                piece = 'r';
+            else if (WHITE_KNIGHT & mask)
+                piece = 'N';
+            else if (BLACK_KNIGHT & mask)
+                piece = 'n';
+            else if (WHITE_BISHOP & mask)
+                piece = 'B';
+            else if (BLACK_BISHOP & mask)
+                piece = 'b';
+            else if (WHITE_QUEEN & mask)
+                piece = 'Q';
+            else if (BLACK_QUEEN & mask)
+                piece = 'q';
+            else if (WHITE_KING & mask)
+                piece = 'K';
+            else if (BLACK_KING & mask)
+                piece = 'k';
 
-                if (WHITE_PAWN & mask)
-                    piece = 'P';
-                else if (BLACK_PAWN & mask)
-                    piece = 'p';
-                else if (WHITE_ROOK & mask)
-                    piece = 'R';
-                else if (BLACK_ROOK & mask)
-                    piece = 'r';
-                else if (WHITE_KNIGHT & mask)
-                    piece = 'N';
-                else if (BLACK_KNIGHT & mask)
-                    piece = 'n';
-                else if (WHITE_BISHOP & mask)
-                    piece = 'B';
-                else if (BLACK_BISHOP & mask)
-                    piece = 'b';
-                else if (WHITE_QUEEN & mask)
-                    piece = 'Q';
-                else if (BLACK_QUEEN & mask)
-                    piece = 'q';
-                else if (WHITE_KING & mask)
-                    piece = 'K';
-                else if (BLACK_KING & mask)
-                    piece = 'k';
-
-                std::cout << piece << " ";
-            }
-
-            std::cout << std::endl;
+            std::cout << piece << " ";
         }
 
-        std::cout << "\n   a b c d e f g h\n";
+        std::cout << std::endl;
     }
-    std::vector<std::vector<int>> storeBoard()
+
+    std::cout << "\n   a b c d e f g h\n";
+}
+std::vector<std::vector<int>> Board::storeBoard()
+{
+    /**
+     * @returns A 8x8 vector storing the current state of the board with each piece represented by
+     *          a distinct integer
+     * cell = 8 * row + col
+     */
+    std::vector<std::vector<int>> board(8, std::vector<int>(8));
+    for (int row = 0; row <= 7; row++)
     {
-        /**
-         * @returns A 8x8 vector storing the current state of the board with each piece represented by
-         *          a distinct integer
-         * cell = 8 * row + col
-         */
-        std::vector<std::vector<int>> board(8, std::vector<int>(8));
-        for (int row = 0; row <= 7; row++)
+        for (int column = 0; column <= 7; column++)
         {
-            for (int column = 0; column <= 7; column++)
+            int cell = 8 * row + column;
+            U64 mask = 1ULL << cell;
+            board[row][column] = 0;
+            if (WHITE_PAWN & mask)
+                board[row][column] = 1;
+            else if (BLACK_PAWN & mask)
+                board[row][column] = -1;
+            else if (WHITE_ROOK & mask)
+                board[row][column] = 4;
+            else if (BLACK_ROOK & mask)
+                board[row][column] = -4;
+            else if (WHITE_KNIGHT & mask)
+                board[row][column] = 2;
+            else if (BLACK_KNIGHT & mask)
+                board[row][column] = -2;
+            else if (WHITE_BISHOP & mask)
+                board[row][column] = 3;
+            else if (BLACK_BISHOP & mask)
+                board[row][column] = -3;
+            else if (WHITE_QUEEN & mask)
+                board[row][column] = 5;
+            else if (BLACK_QUEEN & mask)
+                board[row][column] = -5;
+            else if (WHITE_KING & mask)
+                board[row][column] = 6;
+            else if (BLACK_KING & mask)
+                board[row][column] = -6;
+        }
+    }
+    return board;
+}
+std::vector<std::vector<int>> Board::possibleMoves(int PieceCode, int row, int col, std::map<int, U64> PieceCodeMap)
+{
+    /**
+     * @returns An 8×8 boolean vector(resultingBoard) where each cell is true
+     * if it represents a possible move, and false otherwise.
+     *
+     * Takes the PieceCode, row, column as an argument and uses the current board state to
+     * evaluate all possible moves by that certain piece.
+     *
+     */
+    std::vector<std::vector<int>> resultingBoard(8, std::vector<int>(8, 0));
+    std::vector<std::pair<int, int>> possibleMoves = {};
+
+    // Stores the Cells of it's colour and enemy's colour in a 64 bit integer respectively.
+    U64 SELF_CELLS = (PieceCode > 0) ? this->getWhiteCells(PieceCodeMap) : this->getBlackCells(PieceCodeMap);
+    U64 ENEMY_CELLS = (PieceCode > 0) ? this->getBlackCells(PieceCodeMap) : this->getWhiteCells(PieceCodeMap);
+    // Update possibleMoves for a Pawn
+    if (PieceCode == 1 || PieceCode == -1)
+    {
+        // Handling a case for moving 2 cells in case the pawn hasn't moved.
+        int initial_row = (PieceCode > 0) ? 1 : 6;
+        if (PieceCode > 0)
+        {
+            // Handling a white pawn.
+            // Create a mask for the required piece cell.
+            int cell = 8 * row + col;
+            U64 mask = 1ULL << cell;
+            // Check if an enemy cell is present in a diagonal cell.
+            if (ENEMY_CELLS >> 7 & mask)
+                possibleMoves.push_back({1, -1});
+            if (ENEMY_CELLS >> 9 & mask)
+                possibleMoves.push_back({1, 1});
+            // Check if the cell ahead (one or two squares forward) is empty.
+            if (!(((ENEMY_CELLS | SELF_CELLS) >> 8) & mask))
             {
-                int cell = 8 * row + column;
-                U64 mask = 1ULL << cell;
-                board[row][column] = 0;
-                if (WHITE_PAWN & mask)
-                    board[row][column] = 1;
-                else if (BLACK_PAWN & mask)
-                    board[row][column] = -1;
-                else if (WHITE_ROOK & mask)
-                    board[row][column] = 4;
-                else if (BLACK_ROOK & mask)
-                    board[row][column] = -4;
-                else if (WHITE_KNIGHT & mask)
-                    board[row][column] = 2;
-                else if (BLACK_KNIGHT & mask)
-                    board[row][column] = -2;
-                else if (WHITE_BISHOP & mask)
-                    board[row][column] = 3;
-                else if (BLACK_BISHOP & mask)
-                    board[row][column] = -3;
-                else if (WHITE_QUEEN & mask)
-                    board[row][column] = 5;
-                else if (BLACK_QUEEN & mask)
-                    board[row][column] = -5;
-                else if (WHITE_KING & mask)
-                    board[row][column] = 6;
-                else if (BLACK_KING & mask)
-                    board[row][column] = -6;
+                possibleMoves.push_back({1, 0});
+                if (!(((ENEMY_CELLS | SELF_CELLS) >> 16) & mask) && row == initial_row)
+                    possibleMoves.push_back({2, 0});
             }
         }
-        return board;
-    }
-    std::vector<std::vector<int>> possibleMoves(int PieceCode, int row, int col, std::map<int, U64> PieceCodeMap)
-    {
-        /**
-         * @returns An 8×8 boolean vector(resultingBoard) where each cell is true
-         * if it represents a possible move, and false otherwise.
-         *
-         * Takes the PieceCode, row, column as an argument and uses the current board state to
-         * evaluate all possible moves by that certain piece.
-         *
-         */
-        std::vector<std::vector<int>> resultingBoard(8, std::vector<int>(8, 0));
-        std::vector<std::pair<int, int>> possibleMoves = {};
-
-        // Stores the Cells of it's colour and enemy's colour in a 64 bit integer respectively.
-        U64 SELF_CELLS = (PieceCode > 0) ? this->getWhiteCells(PieceCodeMap) : this->getBlackCells(PieceCodeMap);
-        U64 ENEMY_CELLS = (PieceCode > 0) ? this->getBlackCells(PieceCodeMap) : this->getWhiteCells(PieceCodeMap);
-        // Update possibleMoves for a Pawn
-        if (PieceCode == 1 || PieceCode == -1)
+        else
         {
-            // Handling a case for moving 2 cells in case the pawn hasn't moved.
-            int initial_row = (PieceCode > 0) ? 1 : 6;
-            if (PieceCode > 0)
+            // Handling a Black pawn similar to above.
+            int cell = 8 * row + col;
+            U64 mask = 1ULL << cell;
+            if (ENEMY_CELLS << 7 & mask)
+                possibleMoves.push_back({-1, 1});
+            if (ENEMY_CELLS << 9 & mask)
+                possibleMoves.push_back({-1, -1});
+            if (!(((ENEMY_CELLS | SELF_CELLS) << 8) & mask))
             {
-                // Handling a white pawn.
-                // Create a mask for the required piece cell.
-                int cell = 8 * row + col;
-                U64 mask = 1ULL << cell;
-                // Check if an enemy cell is present in a diagonal cell.
-                if (ENEMY_CELLS >> 7 & mask)
-                    possibleMoves.push_back({1, -1});
-                if (ENEMY_CELLS >> 9 & mask)
-                    possibleMoves.push_back({1, 1});
-                // Check if the cell ahead (one or two squares forward) is empty.
-                if (!(((ENEMY_CELLS | SELF_CELLS) >> 8) & mask))
-                {
-                    possibleMoves.push_back({1, 0});
-                    if (!(((ENEMY_CELLS | SELF_CELLS) >> 16) & mask) && row == initial_row)
-                        possibleMoves.push_back({2, 0});
-                }
+                possibleMoves.push_back({-1, 0});
+                if (!(((ENEMY_CELLS | SELF_CELLS) << 16) & mask) && row == initial_row)
+                    possibleMoves.push_back({-2, 0});
+            }
+        }
+    }
+    // Update possibleMoves for a knight.
+    else if (PieceCode == 2 || PieceCode == -2)
+    {
+        possibleMoves = {{2, 1}, {1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, 2}, {-2, -1}, {-1, -2}};
+    }
+    // Update possibleMoves for a bishop.
+    else if (PieceCode == 3 || PieceCode == -3)
+    {
+        int cell = 8 * row + col;
+        U64 mask = 1ULL << cell;
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (7 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, -i});
+                break;
+            }
+            else if ((mask << (7 * i)) & SELF_CELLS)
+            {
+                break;
             }
             else
             {
-                // Handling a Black pawn similar to above.
-                int cell = 8 * row + col;
+                possibleMoves.push_back({i, -i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (9 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, i});
+                break;
+            }
+            else if ((mask << (9 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({i, i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (9 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, -i});
+                break;
+            }
+            else if ((mask >> (9 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, -i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (7 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, i});
+                break;
+            }
+            else if ((mask >> (7 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, i});
+            }
+        }
+    }
+    // Update possibleMoves for a rook.
+    else if (PieceCode == 4 || PieceCode == -4)
+    {
+        int cell = 8 * row + col;
+        U64 mask = 1ULL << cell;
+        // Along Vertical direction
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (8 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, 0});
+                break;
+            }
+            else if ((mask << (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({i, 0});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (8 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, 0});
+                break;
+            }
+            else if ((mask >> (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, 0});
+            }
+        }
+        // Along horizontal direction
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << i) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({0, i});
+                break;
+            }
+            else if ((mask << (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({0, i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> i) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({0, -i});
+                break;
+            }
+            else if ((mask >> i) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({0, -i});
+            }
+        }
+    }
+    // Update possibleMoves for a Queen.
+    else if (PieceCode == 5 || PieceCode == -5)
+    {
+        int cell = 8 * row + col;
+        U64 mask = 1ULL << cell;
+        // Along Vertical direction
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (8 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, 0});
+                break;
+            }
+            else if ((mask << (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({i, 0});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (8 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, 0});
+                break;
+            }
+            else if ((mask >> (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, 0});
+            }
+        }
+        // Along horizontal direction
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << i) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({0, i});
+                break;
+            }
+            else if ((mask << (8 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({0, i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> i) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({0, -i});
+                break;
+            }
+            else if ((mask >> i) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({0, -i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (7 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, -i});
+                break;
+            }
+            else if ((mask << (7 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({i, -i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask << (9 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({i, i});
+                break;
+            }
+            else if ((mask << (9 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({i, i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (9 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, -i});
+                break;
+            }
+            else if ((mask >> (9 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, -i});
+            }
+        }
+        for (int i = 1; i <= 7; i++)
+        {
+            if ((mask >> (7 * i)) & ENEMY_CELLS)
+            {
+                possibleMoves.push_back({-i, i});
+                break;
+            }
+            else if ((mask >> (7 * i)) & SELF_CELLS)
+            {
+                break;
+            }
+            else
+            {
+                possibleMoves.push_back({-i, i});
+            }
+        }
+    }
+    // Update possibleMoves for a king.
+    else if (PieceCode == 6 || PieceCode == -6)
+    {
+        possibleMoves = {{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    }
+    // check if each move lies withing the board and update resultingBoard.
+    for (auto move : possibleMoves)
+    {
+        if (row + move.first <= 7 && row + move.first >= 0 && col + move.second <= 7 && col + move.second >= 0)
+        {
+            resultingBoard[row + move.first][col + move.second] = 1;
+        }
+    }
+    // Remove any possible move that lands on a piece of the same color.
+    for (int row = 0; row <= 7; row++)
+    {
+        for (int col = 0; col <= 7; col++)
+        {
+            if (resultingBoard[row][col])
+            {
+                int cell = row * 8 + col;
                 U64 mask = 1ULL << cell;
-                if (ENEMY_CELLS << 7 & mask)
-                    possibleMoves.push_back({-1, 1});
-                if (ENEMY_CELLS << 9 & mask)
-                    possibleMoves.push_back({-1, -1});
-                if (!(((ENEMY_CELLS | SELF_CELLS) << 8) & mask))
-                {
-                    possibleMoves.push_back({-1, 0});
-                    if (!(((ENEMY_CELLS | SELF_CELLS) << 16) & mask) && row == initial_row)
-                        possibleMoves.push_back({-2, 0});
-                }
+                if (mask & SELF_CELLS)
+                    resultingBoard[row][col] = 0;
             }
         }
-        // Update possibleMoves for a knight.
-        else if (PieceCode == 2 || PieceCode == -2)
-        {
-            possibleMoves = {{2, 1}, {1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, 2}, {-2, -1}, {-1, -2}};
-        }
-        // Update possibleMoves for a bishop.
-        else if (PieceCode == 3 || PieceCode == -3)
-        {
-            int cell = 8 * row + col;
-            U64 mask = 1ULL << cell;
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (7 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, -i});
-                    break;
-                }
-                else if ((mask << (7 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, -i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (9 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, i});
-                    break;
-                }
-                else if ((mask << (9 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (9 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, -i});
-                    break;
-                }
-                else if ((mask >> (9 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, -i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (7 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, i});
-                    break;
-                }
-                else if ((mask >> (7 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, i});
-                }
-            }
-        }
-        // Update possibleMoves for a rook.
-        else if (PieceCode == 4 || PieceCode == -4)
-        {
-            int cell = 8 * row + col;
-            U64 mask = 1ULL << cell;
-            // Along Vertical direction
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (8 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, 0});
-                    break;
-                }
-                else if ((mask << (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, 0});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (8 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, 0});
-                    break;
-                }
-                else if ((mask >> (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, 0});
-                }
-            }
-            // Along horizontal direction
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << i) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({0, i});
-                    break;
-                }
-                else if ((mask << (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({0, i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> i) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({0, -i});
-                    break;
-                }
-                else if ((mask >> i) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({0, -i});
-                }
-            }
-        }
-        // Update possibleMoves for a Queen.
-        else if (PieceCode == 5 || PieceCode == -5)
-        {
-            int cell = 8 * row + col;
-            U64 mask = 1ULL << cell;
-            // Along Vertical direction
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (8 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, 0});
-                    break;
-                }
-                else if ((mask << (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, 0});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (8 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, 0});
-                    break;
-                }
-                else if ((mask >> (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, 0});
-                }
-            }
-            // Along horizontal direction
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << i) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({0, i});
-                    break;
-                }
-                else if ((mask << (8 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({0, i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> i) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({0, -i});
-                    break;
-                }
-                else if ((mask >> i) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({0, -i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (7 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, -i});
-                    break;
-                }
-                else if ((mask << (7 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, -i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask << (9 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({i, i});
-                    break;
-                }
-                else if ((mask << (9 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({i, i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (9 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, -i});
-                    break;
-                }
-                else if ((mask >> (9 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, -i});
-                }
-            }
-            for (int i = 1; i <= 7; i++)
-            {
-                if ((mask >> (7 * i)) & ENEMY_CELLS)
-                {
-                    possibleMoves.push_back({-i, i});
-                    break;
-                }
-                else if ((mask >> (7 * i)) & SELF_CELLS)
-                {
-                    break;
-                }
-                else
-                {
-                    possibleMoves.push_back({-i, i});
-                }
-            }
-        }
-        // Update possibleMoves for a king.
-        else if (PieceCode == 6 || PieceCode == -6)
-        {
-            possibleMoves = {{1, 0}, {-1, 0}, {0, -1}, {0, 1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-        }
-        // check if each move lies withing the board and update resultingBoard.
-        for (auto move : possibleMoves)
-        {
-            if (row + move.first <= 7 && row + move.first >= 0 && col + move.second <= 7 && col + move.second >= 0)
-            {
-                resultingBoard[row + move.first][col + move.second] = 1;
-            }
-        }
-        // Remove any possible move that lands on a piece of the same color.
-        for (int row = 0; row <= 7; row++)
-        {
-            for (int col = 0; col <= 7; col++)
-            {
-                if (resultingBoard[row][col])
-                {
-                    int cell = row * 8 + col;
-                    U64 mask = 1ULL << cell;
-                    if (mask & SELF_CELLS)
-                        resultingBoard[row][col] = 0;
-                }
-            }
-        }
+    }
 
-        return resultingBoard;
-    }
-    U64 getWhiteCells(std::map<int, U64> PieceCodeMap)
+    return resultingBoard;
+}
+U64 Board::getWhiteCells(std::map<int, U64> PieceCodeMap)
+{
+    U64 WHITE_CELLS = 0;
+    for (int i = 1; i <= 6; i++)
+        WHITE_CELLS |= PieceCodeMap[i];
+    return WHITE_CELLS;
+}
+U64 Board::getBlackCells(std::map<int, U64> PieceCodeMap)
+{
+    U64 BLACK_CELLS = 0;
+    for (int i = 1; i <= 6; i++)
+        BLACK_CELLS |= PieceCodeMap[-i];
+    return BLACK_CELLS;
+}
+bool Board::updateBoard(int Piececode, int init_row, int init_col, int end_row, int end_col)
+{
+    U64 init_mask = 1ULL << (8 * init_row + init_col);
+    U64 end_mask = 1ULL << (8 * end_row + end_col);
+    bool valid = this->validateMove(Piececode, init_row, init_col, end_row, end_col);
+    if (valid)
     {
-        U64 WHITE_CELLS = 0;
-        for (int i = 1; i <= 6; i++)
-            WHITE_CELLS |= PieceCodeMap[i];
-        return WHITE_CELLS;
-    }
-    U64 getBlackCells(std::map<int, U64> PieceCodeMap)
-    {
-        U64 BLACK_CELLS = 0;
-        for (int i = 1; i <= 6; i++)
-            BLACK_CELLS |= PieceCodeMap[-i];
-        return BLACK_CELLS;
-    }
-    bool updateBoard(int Piececode, int init_row, int init_col, int end_row, int end_col)
-    {
-        U64 init_mask = 1ULL << (8 * init_row + init_col);
-        U64 end_mask = 1ULL << (8 * end_row + end_col);
-        bool valid = this->validateMove(Piececode, init_row, init_col, end_row, end_col);
-        if (valid)
-        {
-            for (auto &piece : this->PieceCodeMap)
-            {
-                piece.second = (piece.second & (~init_mask));
-                piece.second = (piece.second & (~end_mask));
-            }
-            this->PieceCodeMap[Piececode] = (this->PieceCodeMap[Piececode] | end_mask);
-            this->WHITE_PAWN = PieceCodeMap[1];
-            this->BLACK_PAWN = PieceCodeMap[-1];
-            this->WHITE_KNIGHT = PieceCodeMap[2];
-            this->BLACK_KNIGHT = PieceCodeMap[-2];
-            this->WHITE_BISHOP = PieceCodeMap[3];
-            this->BLACK_BISHOP = PieceCodeMap[-3];
-            this->WHITE_ROOK = PieceCodeMap[4];
-            this->BLACK_ROOK = PieceCodeMap[-4];
-            this->WHITE_QUEEN = PieceCodeMap[5];
-            this->BLACK_QUEEN = PieceCodeMap[-5];
-            this->WHITE_KING = PieceCodeMap[6];
-            this->BLACK_KING = PieceCodeMap[-6];
-        }
-        return valid;
-    }
-    bool inCheckCondition(int TURN, std::map<int, U64> PieceCodeMap)
-    {
-        int transform = (3 - 2 * TURN);
-        int kingCell = __builtin_ctzll(PieceCodeMap[transform * 6]);
-        int kingrow = kingCell / 8;
-        int kingcol = kingCell % 8;
-        for (auto const &[piece, bitboard] : PieceCodeMap)
-        {
-            U64 bitboardcopy = bitboard;
-            if (transform * piece < 0)
-            {
-                while (bitboardcopy)
-                {
-                    int piececell = __builtin_ctzll(bitboardcopy);
-                    int piecerow = piececell / 8;
-                    int piececol = piececell % 8;
-                    if (possibleMoves(piece, piecerow, piececol, PieceCodeMap)[kingrow][kingcol])
-                        return true;
-                    bitboardcopy &= (bitboardcopy - 1);
-                }
-            }
-        }
-        return false;
-    }
-    bool validateMove(int Piececode, int init_row, int init_col, int end_row, int end_col)
-    {
-        std::map<int, U64> tmpPieceCodeMap = this->PieceCodeMap;
-        int TURN = (Piececode > 0) ? 1 : 2;
-        U64 init_mask = 1ULL << (8 * init_row + init_col);
-        U64 end_mask = 1ULL << (8 * end_row + end_col);
-        for (auto &piece : tmpPieceCodeMap)
+        for (auto &piece : this->PieceCodeMap)
         {
             piece.second = (piece.second & (~init_mask));
             piece.second = (piece.second & (~end_mask));
         }
-        tmpPieceCodeMap[Piececode] = (tmpPieceCodeMap[Piececode] | end_mask);
-        if (inCheckCondition(TURN, tmpPieceCodeMap))
-            return false;
-        return true;
+        this->PieceCodeMap[Piececode] = (this->PieceCodeMap[Piececode] | end_mask);
+        this->WHITE_PAWN = PieceCodeMap[1];
+        this->BLACK_PAWN = PieceCodeMap[-1];
+        this->WHITE_KNIGHT = PieceCodeMap[2];
+        this->BLACK_KNIGHT = PieceCodeMap[-2];
+        this->WHITE_BISHOP = PieceCodeMap[3];
+        this->BLACK_BISHOP = PieceCodeMap[-3];
+        this->WHITE_ROOK = PieceCodeMap[4];
+        this->BLACK_ROOK = PieceCodeMap[-4];
+        this->WHITE_QUEEN = PieceCodeMap[5];
+        this->BLACK_QUEEN = PieceCodeMap[-5];
+        this->WHITE_KING = PieceCodeMap[6];
+        this->BLACK_KING = PieceCodeMap[-6];
     }
-};
+    return valid;
+}
+bool Board::inCheckCondition(int TURN, std::map<int, U64> PieceCodeMap)
+{
+    int transform = (3 - 2 * TURN);
+    int kingCell = __builtin_ctzll(PieceCodeMap[transform * 6]);
+    int kingrow = kingCell / 8;
+    int kingcol = kingCell % 8;
+    for (auto const &[piece, bitboard] : PieceCodeMap)
+    {
+        U64 bitboardcopy = bitboard;
+        if (transform * piece < 0)
+        {
+            while (bitboardcopy)
+            {
+                int piececell = __builtin_ctzll(bitboardcopy);
+                int piecerow = piececell / 8;
+                int piececol = piececell % 8;
+                if (possibleMoves(piece, piecerow, piececol, PieceCodeMap)[kingrow][kingcol])
+                    return true;
+                bitboardcopy &= (bitboardcopy - 1);
+            }
+        }
+    }
+    return false;
+}
+bool Board::validateMove(int Piececode, int init_row, int init_col, int end_row, int end_col)
+{
+    std::map<int, U64> tmpPieceCodeMap = this->PieceCodeMap;
+    int TURN = (Piececode > 0) ? 1 : 2;
+    U64 init_mask = 1ULL << (8 * init_row + init_col);
+    U64 end_mask = 1ULL << (8 * end_row + end_col);
+    for (auto &piece : tmpPieceCodeMap)
+    {
+        piece.second = (piece.second & (~init_mask));
+        piece.second = (piece.second & (~end_mask));
+    }
+    tmpPieceCodeMap[Piececode] = (tmpPieceCodeMap[Piececode] | end_mask);
+    if (inCheckCondition(TURN, tmpPieceCodeMap))
+        return false;
+    return true;
+}
 
 PYBIND11_MODULE(board, m)
 {

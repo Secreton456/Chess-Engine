@@ -3,7 +3,9 @@ EXT := $(shell $(PYTHON) -m pybind11 --extension-suffix)
 INCLUDES := $(shell $(PYTHON) -m pybind11 --includes)
 
 CXX := c++
-CXXFLAGS := -O3 -Wall -shared -std=c++17 -fPIC $(INCLUDES)
+CXXFLAGS := -O3 -Wall -shared -std=c++17 -fPIC \
+$(INCLUDES) \
+-Ibackend/include
 
 TARGET := frontend/board$(EXT)
 SRC := backend/src/board.cpp
