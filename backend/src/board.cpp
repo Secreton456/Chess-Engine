@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <bitset>
 #include <bits/stdc++.h>
-#include <../include/board.hpp>
+#include <../include/board.h>
 typedef uint64_t U64;
 
 namespace py = pybind11;
