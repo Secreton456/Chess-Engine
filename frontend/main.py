@@ -35,6 +35,8 @@ BOARD.printBoard()
 
 pygame.init()
 
+TURN = 1  # Turn = 1 --> AI 2 --> Player
+
 IMAGES = {}
 PIECECODE = {
     1: "WHITE_PAWN",
@@ -126,40 +128,20 @@ def blitImages(BOARD: Board):
                 blitImageOnCell(boardVector[row][column], row, column)
 
 
-def drawPossibleMoves(BOARD: Board):
-    mouse_x, mouse_y = pygame.mouse.get_pos()
-
-    hover_col = mouse_x // GRIDWIDTH
-    hover_row = mouse_y // GRIDWIDTH
-
-    boardVector = np.array(BOARD.storeBoard())
-    indices = np.where(
-        BOARD.possibleMoves(boardVector[hover_row][hover_col], hover_row, hover_col)
-    )
-    if DEBUG:
-        print(f"Current Board State")
-        for row in BOARD.possibleMoves(
-            boardVector[hover_row][hover_col], hover_row, hover_col
-        ):
-            print(row)
-        print("\n")
-    for r, c in zip(indices[0], indices[1]):
-        pygame.draw.circle(
-            surface=WINDOW,
-            color=(0, 255, 0),
-            center=((c + 0.5) * GRIDWIDTH, (r + 0.5) * GRIDWIDTH),
-            radius=10,
-        )
-
-
-def markCell(markedCell):
+def markCell(markedCell, BOARD: Board, TURN: int):
     mouse_x, mouse_y = pygame.mouse.get_pos()
     hover_col = mouse_x // GRIDWIDTH
     hover_row = mouse_y // GRIDWIDTH
+    boardvector = BOARD.storeBoard()
 
     if markedCell == (hover_row, hover_col):
         return None
-    markedCell = hover_row, hover_col
+    markedCell = (
+        (hover_row, hover_col)
+        if boardvector[hover_row][hover_col] * (3 - 2 * TURN) > 0
+        else None
+    )
+
     if DEBUG:
         print(f"markedCell:{markedCell}")
     return markedCell
@@ -206,14 +188,15 @@ def drawMarkedMoves(markedMoves: list):
         )
 
 
-def chooseMove(BOARD: Board, markedCell: tuple, markedMoves: list):
+def chooseMove(BOARD: Board, markedCell: tuple, markedMoves: list, TURN: int):
     boardVector = BOARD.storeBoard()
 
     piece = boardVector[markedCell[0]][markedCell[1]]
     BOARD.updateBoard(piece, markedCell[0], markedCell[1], hover_row, hover_col)
     BOARD.printBoard()
     markedCell = None
-    return markedCell
+    TURN = 1 if TURN == 2 else 2
+    return markedCell, TURN
 
 
 LoadImages(IMAGES=IMAGES)
@@ -221,7 +204,6 @@ LoadImages(IMAGES=IMAGES)
 while Running:
     drawCanvas()
     blitImages(BOARD)
-    drawPossibleMoves(BOARD)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -233,10 +215,10 @@ while Running:
             hover_col = mouse_x // GRIDWIDTH
 
             if markedCell is not None and (hover_row, hover_col) in markedMoves:
-                markedCell = chooseMove(BOARD, markedCell, markedMoves)
+                markedCell, TURN = chooseMove(BOARD, markedCell, markedMoves, TURN)
                 markedMoves = None
             else:
-                markedCell = markCell(None)
+                markedCell = markCell(None, BOARD, TURN)
                 if markedCell:
                     markedMoves = markMoves(markedCell, BOARD)
     if markedCell is not None:
